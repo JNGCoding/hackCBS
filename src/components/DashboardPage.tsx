@@ -4,12 +4,13 @@ import {
   Home, MessageCircle, User, Settings, Clock, Download, 
   Calendar, Pill, Activity, Droplet, Heart, FileText 
 } from 'lucide-react';
+import { useGlobal } from '../contexts/GlobalContext';
 
 interface DashboardPageProps {
   setCurrentPage: (page: any) => void;
 }
 
-const consultations = [
+const consultations: any[] = [
   {
     id: 1,
     date: 'Nov 7, 2025',
@@ -43,9 +44,33 @@ const consultations = [
 export function DashboardPage({ setCurrentPage }: DashboardPageProps) {
   const [activeNav, setActiveNav] = useState('home');
 
+  const { username, setUsername } = useGlobal();
+  const { formData, setFormData } = useGlobal();
+
+  const calculateAge = (dob: string): number => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+
+    const hasBirthdayPassedThisYear =
+      today.getMonth() > birthDate.getMonth() ||
+      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+    if (!hasBirthdayPassedThisYear) {
+      age -= 1;
+    }
+
+    return age;
+  };
+
+  let age: any = "not defined";
+  if (formData.dateOfBirth.toLowerCase() !== "null" || formData.dateOfBirth.toLowerCase() !== "none") {
+    age = calculateAge(formData.dateOfBirth);
+  }
+
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
-    { id: 'consultations', icon: MessageCircle, label: 'Consultations' },
     { id: 'profile', icon: User, label: 'Profile' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];
@@ -91,7 +116,7 @@ export function DashboardPage({ setCurrentPage }: DashboardPageProps) {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="mb-2">Welcome back, Alex!</h1>
+            <h1 className="mb-2">Welcome back, {formData.name}</h1>
             <p className="text-gray-600">Here's your health overview</p>
           </motion.div>
 
@@ -134,19 +159,19 @@ export function DashboardPage({ setCurrentPage }: DashboardPageProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-blue-100 text-sm mb-1">Age</p>
-                  <p className="text-white">28 years</p>
+                  <p className="text-white">{age} years</p>
                 </div>
                 <div>
                   <p className="text-blue-100 text-sm mb-1">Blood Group</p>
-                  <p className="text-white">A+</p>
+                  <p className="text-white">{formData.bloodGroup}</p>
                 </div>
                 <div>
                   <p className="text-blue-100 text-sm mb-1">Height</p>
-                  <p className="text-white">175 cm</p>
+                  <p className="text-white">{formData.height} cm</p>
                 </div>
                 <div>
                   <p className="text-blue-100 text-sm mb-1">Weight</p>
-                  <p className="text-white">70 kg</p>
+                  <p className="text-white">{formData.weight} kg</p>
                 </div>
               </div>
 
@@ -154,10 +179,7 @@ export function DashboardPage({ setCurrentPage }: DashboardPageProps) {
                 <p className="text-blue-100 text-sm mb-2">Allergies</p>
                 <div className="flex flex-wrap gap-2">
                   <span className="px-3 py-1 bg-white/20 backdrop-blur-lg rounded-full text-sm">
-                    Penicillin
-                  </span>
-                  <span className="px-3 py-1 bg-white/20 backdrop-blur-lg rounded-full text-sm">
-                    Peanuts
+                    {formData.allergies}
                   </span>
                 </div>
               </div>

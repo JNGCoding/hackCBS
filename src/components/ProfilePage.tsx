@@ -1,28 +1,40 @@
-import { useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   User, Mail, Phone, MapPin, Calendar, Edit2, Save, Upload,
   Heart, Activity, Weight, Ruler, Droplet, AlertCircle
 } from 'lucide-react';
+import { useGlobal } from '../contexts/GlobalContext';
+import { sendPlainText } from '../services/BackendBridge';
 
 export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    name: 'Alex Johnson',
-    email: 'alex.johnson@email.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    dateOfBirth: '1997-03-15',
-    gender: 'Male',
-    bloodGroup: 'A+',
-    height: '175',
-    weight: '70',
-    allergies: 'Penicillin, Peanuts',
-    chronicConditions: 'None',
-    emergencyContact: 'Jane Johnson - +1 (555) 987-6543'
-  });
+
+  const { username, setUsername } = useGlobal();
+  const { formData, setFormData } = useGlobal();
+
+  const calculateAge = (dob: string): number => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+
+    const hasBirthdayPassedThisYear =
+      today.getMonth() > birthDate.getMonth() ||
+      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+    if (!hasBirthdayPassedThisYear) {
+      age -= 1;
+    }
+
+    return age;
+  };
+
+  let age: any = "not defined";
+  if (formData.dateOfBirth.toLowerCase() !== "null" || formData.dateOfBirth.toLowerCase() !== "none") {
+    age = calculateAge(formData.dateOfBirth);
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -69,7 +81,26 @@ export function ProfilePage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => {
+              if (isEditing) {
+                //* Change elements here
+                setTimeout(async () => {
+                  await sendPlainText("account/infochange", username + "~" + "USERNAME" + "~" + formData.name);
+                  await sendPlainText("account/infochange", username + "~" + "BIRTHDATE" + "~" + formData.dateOfBirth);
+                  await sendPlainText("account/infochange", username + "~" + "PHONE" + "~" + formData.phone);
+                  await sendPlainText("account/infochange", username + "~" + "GENDER" + "~" + formData.gender);
+                  await sendPlainText("account/infochange", username + "~" + "LOCATION" + "~" + formData.location);
+                  await sendPlainText("account/infochange", username + "~" + "BLOODGROUP" + "~" + formData.bloodGroup);                  
+                  await sendPlainText("account/infochange", username + "~" + "HEIGHT_IN_CM" + "~" + formData.height);
+                  await sendPlainText("account/infochange", username + "~" + "WEIGHT" + "~" + formData.weight);
+                  await sendPlainText("account/infochange", username + "~" + "ALLERGIES" + "~" + formData.allergies);                  
+                }, 0);
+
+                console.log("INFO CHANGED!");
+              }
+
+              setIsEditing(!isEditing)
+            }}
             className={`px-6 py-3 rounded-full flex items-center gap-2 transition-all ${
               isEditing
                 ? 'bg-gradient-to-r from-green-500 to-emerald-400 text-white shadow-lg'
@@ -122,17 +153,7 @@ export function ProfilePage() {
 
                 <div>
                   <label className="block text-sm text-gray-600 mb-2">Email</label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-xl border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    />
-                  ) : (
-                    <p className="text-gray-800">{formData.email}</p>
-                  )}
+                  <p className="text-gray-800">{formData.email}</p>
                 </div>
 
                 <div>
@@ -284,21 +305,6 @@ export function ProfilePage() {
                     <p className="text-gray-800">{formData.allergies}</p>
                   )}
                 </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm text-gray-600 mb-2">Chronic Conditions</label>
-                  {isEditing ? (
-                    <textarea
-                      name="chronicConditions"
-                      value={formData.chronicConditions}
-                      onChange={handleInputChange}
-                      rows={2}
-                      className="w-full px-4 py-3 rounded-xl border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none"
-                    />
-                  ) : (
-                    <p className="text-gray-800">{formData.chronicConditions}</p>
-                  )}
-                </div>
               </div>
             </motion.div>
 
@@ -349,7 +355,7 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="text-white">{formData.name}</h3>
-                  <p className="text-blue-100 text-sm">28 years old</p>
+                  <p className="text-blue-100 text-sm">{age} years old</p>
                 </div>
               </div>
               <div className="space-y-2 text-sm">

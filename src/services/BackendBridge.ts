@@ -4,7 +4,7 @@
  * @param message the message we want to post
  * @returns Returns the response received from the server.
  */
-export async function sendPlainText(path: string, message: string): Promise<string> {
+export async function sendPlainText(path: string, message: string): Promise<any> {
   try {
     const res = await fetch("http://localhost:8080/" + path, {
       method: "POST",
@@ -17,7 +17,7 @@ export async function sendPlainText(path: string, message: string): Promise<stri
     console.log("Frontend received: " + data);
     return data;
   } catch (err) {
-    console.error("❌ Error:", err);
-    return "Unexpected Error";
+    console.error("Error:", err);
+    return undefined;
   }
 }

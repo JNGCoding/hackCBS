@@ -40,9 +40,6 @@ export function ChatbotPage() {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const response = sendPlainText("api/gemini", input);
-    console.log(response);
-
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -55,35 +52,21 @@ export function ChatbotPage() {
     setIsTyping(true);
 
     // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        {
-          content: "Based on your symptoms, it sounds like you might be experiencing a common cold. I recommend getting plenty of rest, staying hydrated, and monitoring your temperature. If symptoms persist for more than a week or worsen, please consult a healthcare professional.",
-          prescription: undefined
-        },
-        {
-          content: "I understand you're asking about pain relief. Here's a safe over-the-counter option:",
-          prescription: {
-            medication: 'Ibuprofen',
-            dosage: '200-400mg',
-            frequency: 'Every 6-8 hours',
-            duration: 'As needed, max 10 days'
-          }
-        },
-        {
-          content: "For better sleep hygiene, I recommend: establishing a regular sleep schedule, avoiding screens 1 hour before bed, keeping your room cool and dark, and practicing relaxation techniques. Would you like specific meditation exercises?",
-          prescription: undefined
-        }
-      ];
-
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    setTimeout(async () => {
+      const response = await sendPlainText("api/gemini", input);
+      const jsonPart = JSON.parse(
+            response
+              .replace(/^```json\s*/, '')  // Remove starting ```json
+              .replace(/```$/, '')         // Remove ending ```
+              .trim()
+      );
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: randomResponse.content,
+        content: jsonPart.content,
         timestamp: new Date(),
-        prescription: randomResponse.prescription
+        prescription: jsonPart.prescription
       };
 
       setMessages(prev => [...prev, aiMessage]);
