@@ -54,8 +54,6 @@ export async function sendPlainText(path: string, message: string, DoCipher: boo
     });
 
     const data = await res.text();
-    console.log("Sent plain text!");
-    console.log("Frontend received: " + data);
     return Decipher_ ? Decipher(data) : data;
   } catch (err) {
     console.error("Error:", err);
