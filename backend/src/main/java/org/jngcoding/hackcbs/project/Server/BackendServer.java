@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-
 import org.jngcoding.hackcbs.project.API.GeminiInterface;
 import org.jngcoding.hackcbs.project.DatabaseSystem.DBSystem;
 
@@ -20,11 +18,12 @@ public class BackendServer {
     public BackendServer(GeminiInterface Gemini, DBSystem system) throws IOException {
         server = HttpServer.create(new InetSocketAddress("localhost", 8080), 0);
         server.createContext("/connection/check", new ConnectionHandler());
-        server.createContext("/api/gemini", new GeminiHandler(Gemini));
+        server.createContext("/api/gemini", new GeminiHandler(Gemini, system));
         server.createContext("/account/login", new LoginHandler(system));
         server.createContext("/account/signup", new SignupHandler(system));
         server.createContext("/account/info", new AccountInfoHandler(system));
         server.createContext("/account/infochange", new AccountInfoChangeHandler(system));
+        server.createContext("/account/chathistory", new ChatHistoryHandler(system));
         server.setExecutor(null); // creates a default executor
     }
 
@@ -58,10 +57,24 @@ public class BackendServer {
 
     static class GeminiHandler implements HttpHandler {
         private final GeminiInterface Gemini;
+        private final DBSystem system;
 
-        public GeminiHandler(GeminiInterface g) {
+        public GeminiHandler(GeminiInterface g, DBSystem s) {
             Gemini = g;
+            system = s;
         }
+
+        private static String extractValue(String json, String key) {
+            int start = json.indexOf(key);
+            if (start == -1) return null;
+
+            int colon = json.indexOf(":", start);
+            int quoteStart = json.indexOf("\"", colon + 1);
+            int quoteEnd = json.indexOf("\"", quoteStart + 1);
+
+            return json.substring(quoteStart + 1, quoteEnd).trim();
+        }
+
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -83,13 +96,23 @@ public class BackendServer {
                 message.append(line);
             }
 
-            String response = Gemini.getReponse(message.toString());
-            System.out.println(response);
+            String[] parts = message.toString().split("~");
 
+            String response = Gemini.getReponse(parts[1]);
             exchange.sendResponseHeaders(200, response.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(response.getBytes());
             }
+
+            if (response.contains("\"prescription\": null")) { return; }
+            String jsonString = "{" + response.replace("```json", "").replace("```", "") + "}";
+            String medication = extractValue(jsonString, "\"medication\":");
+            String dosage = extractValue(jsonString, "\"dosage\":");
+            String frequency = extractValue(jsonString, "\"frequency\":");
+            String duration = extractValue(jsonString, "\"duration\":");
+
+            String resultant = medication + ", " + dosage + ", " + frequency + ", " + duration;
+            system.enterChatHistoryBlock(parts[0], parts[1], resultant);
         }
     }
 
@@ -247,6 +270,41 @@ public class BackendServer {
 
             String[] parts = message.toString().split("~");
             String response = system.changePropertyOfUser(parts[0], parts[1], parts[2]) ? "true" : "false";
+            exchange.sendResponseHeaders(200, response.length());
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response.getBytes());
+            }
+        }
+    }
+
+    static class ChatHistoryHandler implements HttpHandler {
+        private final DBSystem system;
+
+        public ChatHistoryHandler(DBSystem db) {
+            system = db;
+        }
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Add CORS headers
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+
+            // Handle preflight OPTIONS request
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1); // No content
+                return;
+            }
+            
+            BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), "utf-8"));
+            StringBuilder message = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                message.append(line);
+            }
+
+            String response = system.getLatest4ConsultationsOfBot(message.toString());
             exchange.sendResponseHeaders(200, response.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(response.getBytes());

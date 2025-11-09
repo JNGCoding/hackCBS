@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class DBSystem {
@@ -60,15 +61,48 @@ public final class DBSystem {
             var resultSet = statement.executeQuery();
             if (!resultSet.next()) throw new SQLException("Account not found");
         });
-    }    
+    }
+
+    private static String generateRandomString() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        int length = 6;
+        StringBuilder sb = new StringBuilder(length);
+        java.util.Random random = new java.util.Random();
+
+        for (int i = 0; i < length; i++) {
+            int index = random.nextInt(characters.length());
+            sb.append(characters.charAt(index));
+        }
+
+        return sb.toString();
+    }
+
+    public String getChatID(String email) {
+        String chatID = null;
+        String query = "SELECT CHAT_ID FROM USERS WHERE EMAIL = ?";
+
+        try (PreparedStatement stmt = DBConnection.prepareStatement(query)) {
+            stmt.setString(1, email);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                chatID = rs.getString("CHAT_ID");
+            }
+        } catch (SQLException e) {
+            System.out.println("Exception: " + e.getMessage());
+        }
+
+        return chatID;
+    }
 
     public boolean enterNewAccount(String email, String password) {
         return trySQLOperation(() -> {
             PreparedStatement statement = DBConnection.prepareStatement(
-                "INSERT INTO USERS (EMAIL, PASSWORD) VALUES (?, ?)"
+                "INSERT INTO USERS (EMAIL, PASSWORD, CHAT_ID) VALUES (?, ?, ?)"
             );
             statement.setString(1, email);
             statement.setString(2, password);
+            statement.setString(3, generateRandomString());
             statement.executeUpdate();
         });
     }
@@ -119,7 +153,64 @@ public final class DBSystem {
         });
     }
 
-    public boolean enterChatHistoryBlock(String username, String message) {
-        return false;
+    public boolean enterChatHistoryBlock(String email, String user_message, String ai_message) {
+        if (email.equals("Guest")) {
+            return true;
+        }
+
+        String CHAT_ID = getChatID(email);        
+        boolean success = trySQLOperation(() -> {
+            String sql = "INSERT INTO MESSAGES(chat_id, message, sender) VALUES(?, ?, ?), (?, ?, ?)";
+            try (PreparedStatement stmt = DBConnection.prepareStatement(sql)) {
+                // User message
+                stmt.setString(1, CHAT_ID);
+                stmt.setString(2, user_message);
+                stmt.setString(3, "USER");
+
+                // AI message
+                stmt.setString(4, CHAT_ID);
+                stmt.setString(5, ai_message);
+                stmt.setString(6, "BOT");
+
+                stmt.executeUpdate();
+            }
+        });
+
+        if (!success) {
+            System.out.println(LatestException.getMessage());
+        }
+
+        return success;
+    }
+
+    public String getLatest4ConsultationsOfBot(String email) {
+        String chatId = getChatID(email);
+        StringBuilder result = new StringBuilder();
+
+        String query = """
+            SELECT MESSAGE, TIMESTAMP
+            FROM messages
+            WHERE CHAT_ID = ?
+            AND SENDER = 'BOT'
+            ORDER BY TIMESTAMP DESC
+            LIMIT 4
+        """;
+
+        try (PreparedStatement stmt = DBConnection.prepareStatement(query)) {
+
+            stmt.setString(1, chatId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String message = rs.getString("MESSAGE");
+                    Timestamp timestamp = rs.getTimestamp("TIMESTAMP");
+                    result.append("[").append(timestamp).append("] ").append(message).append("~");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return "Error retrieving bot consultations.";
+        }
+
+        return result.toString().trim();
     }
 }

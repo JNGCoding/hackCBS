@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Pill, Calendar, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { sendPlainText } from '../services/BackendBridge';
+import { useGlobal } from '../contexts/GlobalContext';
 
 interface Message {
   id: string;
@@ -29,6 +30,9 @@ export function ChatbotPage() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const { username, setUsername } = useGlobal();
+  const { formData, setFormData } = useGlobal();
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -53,7 +57,7 @@ export function ChatbotPage() {
 
     // Simulate AI response
     setTimeout(async () => {
-      const response = await sendPlainText("api/gemini", input);
+      const response = await sendPlainText("api/gemini", username + "~" + input);
       const jsonPart = JSON.parse(
             response
               .replace(/^```json\s*/, '')  // Remove starting ```json

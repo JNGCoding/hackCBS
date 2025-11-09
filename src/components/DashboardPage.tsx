@@ -1,51 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   Home, MessageCircle, User, Settings, Clock, Download, 
   Calendar, Pill, Activity, Droplet, Heart, FileText 
 } from 'lucide-react';
 import { useGlobal } from '../contexts/GlobalContext';
+import { sendPlainText } from '../services/BackendBridge';
 
 interface DashboardPageProps {
   setCurrentPage: (page: any) => void;
 }
 
-const consultations: any[] = [
-  {
-    id: 1,
-    date: 'Nov 7, 2025',
-    time: '2:30 PM',
-    summary: 'Headache and fever symptoms',
-    prescription: 'Paracetamol 500mg, 3x daily',
-  },
-  {
-    id: 2,
-    date: 'Nov 5, 2025',
-    time: '10:15 AM',
-    summary: 'Sleep improvement consultation',
-    prescription: 'Sleep hygiene recommendations',
-  },
-  {
-    id: 3,
-    date: 'Nov 3, 2025',
-    time: '4:45 PM',
-    summary: 'Dietary advice for weight management',
-    prescription: 'Custom meal plan provided',
-  },
-  {
-    id: 4,
-    date: 'Oct 30, 2025',
-    time: '11:00 AM',
-    summary: 'Seasonal allergy symptoms',
-    prescription: 'Antihistamine as needed',
-  },
-];
-
 export function DashboardPage({ setCurrentPage }: DashboardPageProps) {
   const [activeNav, setActiveNav] = useState('home');
-
+  const [consultations, setConsultations] = useState<any[]>([]);
   const { username, setUsername } = useGlobal();
   const { formData, setFormData } = useGlobal();
+
+  useEffect(() => {
+    (async () => {
+      const response = await sendPlainText("account/chathistory", username);
+      const parsed = response
+        .split("~")
+        .filter((entry: string) => entry.trim())
+        .map((entry: string, index: number) => {
+          const match = entry.match(/\[(.*?)\]\s*(.*)/);
+          if (!match) return null;
+
+          let [_, timestampStr, prescription] = match;
+          timestampStr = timestampStr.replace(/\.\d+$/, "").replace(" ", "T");
+          const dateObj = new Date(timestampStr);
+          if (isNaN(dateObj.getTime())) return null;
+
+          return {
+            id: index + 1,
+            date: dateObj.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            }),
+            time: dateObj.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: 'numeric',
+              hour12: true
+            }),
+            prescription: prescription.trim()
+          };
+        })
+        .filter(Boolean);
+
+      setConsultations(parsed); // ✅ triggers re-render
+    })();
+  }, []);
+
 
   const calculateAge = (dob: string): number => {
     const birthDate = new Date(dob);
@@ -245,7 +252,6 @@ export function DashboardPage({ setCurrentPage }: DashboardPageProps) {
                           <MessageCircle className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="text-gray-800">{consultation.summary}</h3>
                           <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />

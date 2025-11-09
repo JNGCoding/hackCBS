@@ -15,7 +15,6 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const { username, setUsername } = useGlobal();
 
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
