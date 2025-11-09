@@ -8,11 +8,13 @@ import "./index.css";
 import { StrictMode } from "react";
 import { sendPlainText } from "./services/BackendBridge.ts";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+let PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 if (!PUBLISHABLE_KEY) {
   throw new Error('Add your Clerk Publishable Key to the .env file')
+} else {
+  //* This line is putten here for just demonstration purposes.
+  PUBLISHABLE_KEY = "pk_test_Ymxlc3NlZC1tb3NxdWl0by0zNi5jbGVyay5hY2NvdW50cy5kZXYk";
 }
-console.log(PUBLISHABLE_KEY);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
