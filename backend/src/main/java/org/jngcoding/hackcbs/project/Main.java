@@ -22,7 +22,6 @@ public class Main {
             System.out.println(e.getMessage());
             System.exit(0);
         }
-        System.out.println(key);
         //************************************/
 
         GeminiInterface gemini = new GeminiInterface(key);
