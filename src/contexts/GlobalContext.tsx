@@ -44,7 +44,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await sendPlainText("account/info", username);
+      const response = await sendPlainText("account/info", username, true, true);
       const jsonPart = JSON.parse(response);
 
       setFormData({

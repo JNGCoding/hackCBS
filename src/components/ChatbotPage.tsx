@@ -57,7 +57,7 @@ export function ChatbotPage() {
 
     // Simulate AI response
     setTimeout(async () => {
-      const response = await sendPlainText("api/gemini", username + "~" + input);
+      const response = await sendPlainText("api/gemini", username + "~" + input, false, false);
       const jsonPart = JSON.parse(
             response
               .replace(/^```json\s*/, '')  // Remove starting ```json

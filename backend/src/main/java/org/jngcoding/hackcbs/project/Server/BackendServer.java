@@ -15,6 +15,45 @@ import org.jngcoding.hackcbs.project.DatabaseSystem.DBSystem;
 public class BackendServer {
     private final HttpServer server;
 
+    public static String encrypt(String message) {
+        int shift = 3;
+        StringBuilder result = new StringBuilder();
+
+        for (char ch : message.toCharArray()) {
+            if (Character.isUpperCase(ch)) {
+                char c = (char) (((ch - 'A' + shift) % 26) + 'A');
+                result.append(c);
+            } else if (Character.isLowerCase(ch)) {
+                char c = (char) (((ch - 'a' + shift) % 26) + 'a');
+                result.append(c);
+            } else {
+                result.append(ch); // Non-alphabetic characters stay the same
+            }
+        }
+
+        return result.toString();
+    }
+
+    public static String decrypt(String message) {
+        int shift = 3;
+        StringBuilder result = new StringBuilder();
+
+        for (char ch : message.toCharArray()) {
+            if (Character.isUpperCase(ch)) {
+                char c = (char) (((ch - 'A' - shift + 26) % 26) + 'A');
+                result.append(c);
+            } else if (Character.isLowerCase(ch)) {
+                char c = (char) (((ch - 'a' - shift + 26) % 26) + 'a');
+                result.append(c);
+            } else {
+                result.append(ch);
+            }
+        }
+
+        return result.toString();
+    }
+
+
     public BackendServer(GeminiInterface Gemini, DBSystem system) throws IOException {
         server = HttpServer.create(new InetSocketAddress("localhost", 8080), 0);
         server.createContext("/connection/check", new ConnectionHandler());
@@ -143,6 +182,8 @@ public class BackendServer {
                 message.append(line);
             }
 
+            message = new StringBuilder( BackendServer.decrypt(message.toString()) );
+
             String[] credentials = message.toString().split("~");
             if (system.usernameExists(credentials[0])) {
                 boolean success = system.accountExists(credentials[0], credentials[1]);
@@ -187,6 +228,8 @@ public class BackendServer {
             while ((line = reader.readLine()) != null) {
                 message.append(line);
             }
+
+            message = new StringBuilder( BackendServer.decrypt(message.toString()) );
 
             String[] credentials = message.toString().split("~");
             if (system.usernameExists(credentials[0])) {
@@ -233,7 +276,9 @@ public class BackendServer {
                 message.append(line);
             }
 
-            String response = system.loadEntireAccount(message.toString());
+            message = new StringBuilder( BackendServer.decrypt(message.toString()) );
+
+            String response = BackendServer.encrypt(system.loadEntireAccount(message.toString()));
             exchange.sendResponseHeaders(200, response.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(response.getBytes());

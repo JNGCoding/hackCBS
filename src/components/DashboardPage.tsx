@@ -19,7 +19,7 @@ export function DashboardPage({ setCurrentPage }: DashboardPageProps) {
 
   useEffect(() => {
     (async () => {
-      const response = await sendPlainText("account/chathistory", username);
+      const response = await sendPlainText("account/chathistory", username, false, false);
       const parsed = response
         .split("~")
         .filter((entry: string) => entry.trim())

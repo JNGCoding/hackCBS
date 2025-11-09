@@ -85,15 +85,15 @@ export function ProfilePage() {
               if (isEditing) {
                 //* Change elements here
                 setTimeout(async () => {
-                  await sendPlainText("account/infochange", username + "~" + "USERNAME" + "~" + formData.name);
-                  await sendPlainText("account/infochange", username + "~" + "BIRTHDATE" + "~" + formData.dateOfBirth);
-                  await sendPlainText("account/infochange", username + "~" + "PHONE" + "~" + formData.phone);
-                  await sendPlainText("account/infochange", username + "~" + "GENDER" + "~" + formData.gender);
-                  await sendPlainText("account/infochange", username + "~" + "LOCATION" + "~" + formData.location);
-                  await sendPlainText("account/infochange", username + "~" + "BLOODGROUP" + "~" + formData.bloodGroup);                  
-                  await sendPlainText("account/infochange", username + "~" + "HEIGHT_IN_CM" + "~" + formData.height);
-                  await sendPlainText("account/infochange", username + "~" + "WEIGHT" + "~" + formData.weight);
-                  await sendPlainText("account/infochange", username + "~" + "ALLERGIES" + "~" + formData.allergies);                  
+                  await sendPlainText("account/infochange", username + "~" + "USERNAME" + "~" + formData.name, false, false);
+                  await sendPlainText("account/infochange", username + "~" + "BIRTHDATE" + "~" + formData.dateOfBirth, false, false);
+                  await sendPlainText("account/infochange", username + "~" + "PHONE" + "~" + formData.phone, false, false);
+                  await sendPlainText("account/infochange", username + "~" + "GENDER" + "~" + formData.gender, false, false);
+                  await sendPlainText("account/infochange", username + "~" + "LOCATION" + "~" + formData.location, false, false);
+                  await sendPlainText("account/infochange", username + "~" + "BLOODGROUP" + "~" + formData.bloodGroup, false, false);                  
+                  await sendPlainText("account/infochange", username + "~" + "HEIGHT_IN_CM" + "~" + formData.height, false, false);
+                  await sendPlainText("account/infochange", username + "~" + "WEIGHT" + "~" + formData.weight, false, false);
+                  await sendPlainText("account/infochange", username + "~" + "ALLERGIES" + "~" + formData.allergies, false, false);                  
                 }, 0);
 
                 console.log("INFO CHANGED!");

@@ -21,7 +21,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
     if (isLogin) {
       setTimeout(async () => {
-        const response = await sendPlainText("account/login", email + "~" + password);
+        const response = await sendPlainText("account/login", email + "~" + password, true, false);
         if (response === "false") {
           alert("Account doesn't exist!");
         } else {
@@ -31,7 +31,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       }, 0);
     } else {
       setTimeout(async () => {
-        const response = await sendPlainText("account/signup", email + "~" + password);
+        const response = await sendPlainText("account/signup", email + "~" + password, true, false);
         if (response === "false") {
           alert("Email already exists!");
         } else {
